@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Imagem para ASCII</title>
+    <meta charset="utf-8">
+    <style>
+      body {
+        font-family: monospace;
+      }
+      
+      #image-preview {
+        max-width: 100%;
+        max-height: 500px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Imagem para ASCII</h1>
+    <form>
+      <label for="image-input">Selecione uma imagem:</label>
+      <input type="file" id="image-input" accept="image/*"><br><br>
+      <button type="submit">Converter para ASCII</button>
+    </form>
+    <br>
+    <div id="image-container">
+      <h2>Imagem original</h2>
+      <img id="image-preview">
+    </div>
+    <br>
+    <div id="ascii-container">
+      <h2>Imagem em ASCII</h2>
+      <pre id="ascii-preview"></pre>
+    </div>
+    <script>
+      const imageInput = document.getElementById("image-input");
+      const imagePreview = document.getElementById("image-preview");
+      const asciiPreview = document.getElementById("ascii-preview");
+      
+      imageInput.addEventListener("change", function() {
+        const file = this.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = function() {
+            imagePreview.src = this.src;
+          }
+        }
+        
+        reader.readAsDataURL(file);
+      });
+      
+      const asciiChars = ["@", "#", "S", "%", "?", "*", "+", ";", ":", ",", "."];
+      
+      function convertToAscii(imageData, width, height) {
+        let asciiArt = "";
+        
+        for (let y = 0; y < height; y += 8) {
+          for (let x = 0; x < width; x += 4) {
+            let rTotal = 0, gTotal = 0, bTotal = 0;
+            
+            for (let i = 0; i < 8; i++) {
+              for (let j = 0; j < 4; j++) {
+                const pixelIndex = ((y + i) * width + (x + j)) * 4;
+                const r = imageData.data[pixelIndex];
+                const g = imageData.data[pixelIndex + 1];
+                const b = imageData.data[pixelIndex + 2];
+                
+                rTotal += r;
+                gTotal += g;
+                bTotal += b;
+              }
+            }
+            
+            const rAvg = Math.round(rTotal / 32);
+            const gAvg = Math.round(gTotal / 32);
+            const bAvg = Math.round(bTotal / 32);
+            const brightness = Math.round(0.299 * rAvg + 0.587 * gAvg + 0.114 * bAvg);
+            const charIndex = Math.round((brightness / 255) * (asciiChars.length - 1));
+            asciiArt += asciiChars[charIndex];
+          }
+          
+          asciiArt += "\n";
+        }
+        
+        return asciiArt;
+      }
+      
+      document.querySelector("form").addEventListener("submit", function(e) {
+        e.preventDefault();
+        
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        const img = new Image();
+            img.onload = function() {
+      const width = img.width;
+      const height = img.height;
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      context.drawImage(img, 0, 0);
+      
+      const imageData = context.getImageData(0, 0, width, height);
+      
+      asciiPreview.innerText = convertToAscii(imageData, width, height);
+    }
+    
+    img.src = imagePreview.src;
+  });
+</script>
+  </body>
+</html>
